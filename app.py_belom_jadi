@@ -1,1 +1,37 @@
+import cv2
+import numpy as np
+import joblib
+from utils import extract_landmark_features
 
+# Load model
+model = joblib.load('model/gender_model.pkl')  # Harus dilatih dulu
+
+# Buka webcam
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Convert to RGB
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    # Ekstrak fitur
+    features = extract_landmark_features(rgb_frame)
+
+    # Prediksi jenis kelamin
+    if features is not None:
+        features = features.reshape(1, -1)
+        prediction = model.predict(features)[0]
+        label = "Laki-laki" if prediction == 1 else "Perempuan"
+        color = (0, 255, 0) if prediction == 1 else (255, 0, 255)
+
+        cv2.putText(frame, label, (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+
+    cv2.imshow("Deteksi Jenis Kelamin", frame)
+    if cv2.waitKey(1) & 0xFF == 27:  # Tekan ESC untuk keluar
+        break
+
+cap.release()
+cv2.destroyAllWindows()
